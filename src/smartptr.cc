@@ -1,7 +1,8 @@
 #include <iostream>
 #include <memory>
 
-struct Foo {
+class Foo {
+public:
     ~Foo() {
         std::cout << "Foo destructor func called" << std::endl;
     }
