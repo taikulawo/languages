@@ -1,3 +1,12 @@
-一些 c/cpp demo
+C/C++ 小程序
 
-全部源码都平铺在root folder，编译产物平铺于target/
+使用xmake构建
+
+编译
+```bash
+xmake --root
+```
+运行
+```bash
+xmake run --root main
+```
