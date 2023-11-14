@@ -14,6 +14,13 @@ target("connect")
 target("return_struct")
     -- https://xmake.io/#/manual/project_target?id=targetset_languages
     set_languages("cxx17")
+    set_kind("binary")
+    set_toolchains("clang")
+    add_files("src/return_struct.c")
+
+target("smartptr")
+    -- https://xmake.io/#/manual/project_target?id=targetset_languages
+    set_languages("cxx17")
     set_toolchains("clang")
     set_kind("binary")
-    add_files("src/return_struct.c")
+    add_files("src/smartptr.cc")
