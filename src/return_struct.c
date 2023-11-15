@@ -4,7 +4,7 @@
 typedef struct {
     void *p;
     int len;
-}req;
+} req;
 
 req foo() {
     req x;
