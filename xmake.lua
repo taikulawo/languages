@@ -1,3 +1,4 @@
+add_rules("plugin.compile_commands.autoupdate", {outputdir = "."})
 target("main")
     set_kind("binary")
     add_files("src/main.c") 
@@ -24,3 +25,11 @@ target("sptr")
     set_toolchains("clang")
     set_kind("binary")
     add_files("src/sptr.cc")
+
+target("move")
+    -- https://xmake.io/#/manual/project_target?id=targetset_languages
+    set_languages("cxx17")
+    set_toolchains("clang")
+    set_kind("binary")
+    add_files("src/move.cc")
+    add_includedirs("include")
