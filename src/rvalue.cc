@@ -32,10 +32,21 @@ public:
     }
 };
 
+class Derive2: public Bar{
+public:
+    Derive2(Foo &&foo): Bar(std::move(foo)) {
+        std::cout << "derive2 called" << std::endl;
+    }
+};
+
 int main() {
     Foo f;
     Derive d(std::move(f));
 
+    // 仅仅一个const，d1 调用 copy constructor
     Foo f1;
     Derive1 d1(std::move(f));
+    // d2 调用 move constructor
+    Foo f2;
+    Derive2 d2(std::move(f));
 }
