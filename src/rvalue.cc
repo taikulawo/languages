@@ -8,6 +8,7 @@ Foo::Foo(){}
 
 class Bar {
 public:
+    // https://www.reddit.com/r/cpp_questions/comments/15o9bvf/comment/jvqc2xr
     Bar(const Foo &foo);
     Bar(Foo &&foo);
 };
