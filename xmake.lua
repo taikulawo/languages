@@ -33,3 +33,10 @@ target("move")
     set_kind("binary")
     add_files("src/move.cc")
     add_includedirs("include")
+
+target("rvalue")
+    -- https://xmake.io/#/manual/project_target?id=targetset_languages
+    set_languages("cxx17")
+    set_toolchains("clang")
+    set_kind("binary")
+    add_files("src/rvalue.cc")
