@@ -1,8 +1,8 @@
-C/C++ 小程序
+C/C++ 程序
 
-使用xmake构建
+xmake构建
 
-编译并运行
+编译运行
 
 ```
 xmake build sptr && xmake run sptr
