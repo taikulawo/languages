@@ -14,21 +14,21 @@ target("connect")
     set_toolchains("clang")
 target("return_struct")
     -- https://xmake.io/#/manual/project_target?id=targetset_languages
-    set_languages("cxx17")
+    set_languages("c99")
     set_kind("binary")
     set_toolchains("clang")
     add_files("src/return_struct.c")
 
 target("sptr")
     -- https://xmake.io/#/manual/project_target?id=targetset_languages
-    set_languages("cxx17")
+    set_languages("cxx14")
     set_toolchains("clang")
     set_kind("binary")
     add_files("src/sptr.cc")
 
 target("move")
     -- https://xmake.io/#/manual/project_target?id=targetset_languages
-    set_languages("cxx17")
+    set_languages("cxx14")
     set_toolchains("clang")
     set_kind("binary")
     add_files("src/move.cc")
@@ -36,7 +36,13 @@ target("move")
 
 target("rvalue")
     -- https://xmake.io/#/manual/project_target?id=targetset_languages
-    set_languages("cxx17")
+    set_languages("cxx11")
     set_toolchains("clang")
     set_kind("binary")
     add_files("src/rvalue.cc")
+target("variant")
+    -- https://xmake.io/#/manual/project_target?id=targetset_languages
+    set_languages("cxx17")
+    set_toolchains("clang")
+    set_kind("binary")
+    add_files("src/variant.cc")

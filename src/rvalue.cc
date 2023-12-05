@@ -44,10 +44,15 @@ int main() {
     Foo f;
     Derive d(std::move(f));
 
-    // 仅仅一个const，d1 调用 copy constructor
+    // 一个const，d1 调用 copy constructor
     Foo f1;
     Derive1 d1(std::move(f));
     // d2 调用 move constructor
     Foo f2;
     Derive2 d2(std::move(f));
+
+    const int &p = 1;
+    const int &&p1 = 1;
+    int p2 = std::move(p1);
+    std::cout << p2;
 }
