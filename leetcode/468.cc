@@ -80,7 +80,7 @@ class Solution {
             }
 
         check_v4:
-            if (!this->is_valid_ipv4_segment(start, &queryIP[i] - start - 1)) {
+            if (!this->is_valid_ipv4_segment(start, &queryIP[i] - start)) {
                 goto errout;
             }
             if (v4_check_count < 0) {
@@ -92,7 +92,7 @@ class Solution {
             start = &queryIP[i] + 1;
             continue;
         check_v6:
-            if (!this->is_valid_v6_segment(start, &queryIP[i] - start - 1)) {
+            if (!this->is_valid_v6_segment(start, &queryIP[i] - start)) {
                 goto errout;
             }
             if (v6_check_count < 0) {
