@@ -1,5 +1,7 @@
+#include <cmath>
 #include <cstdint>
 #include <string>
+#include <iostream>
 // https://leetcode.cn/problems/validate-ip-address/description/
 class Solution {
   public:
@@ -29,7 +31,7 @@ class Solution {
             if (!this->is_digit(ch[i])) {
                 return false;
             }
-            value += (this->digit_to_number(ch[i]) * 10 ^ i);
+            value += (this->digit_to_number(ch[i]) * std::pow(10, i));
         }
         if (len > 0 && ch[0] == '0') {
             return false;
@@ -110,5 +112,6 @@ class Solution {
 int main(int argc, char *argv[]) {
     std::string str("172.16.254.1");
     Solution s;
-    s.validIPAddress(str);
+    std::string res = s.validIPAddress(str);
+    std::cout << res;
 }

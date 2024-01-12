@@ -7,3 +7,7 @@ target/
 build/
 .cache
 compile_commands.json
+
+src/*
+!src/*.cc
+!src/*.c
