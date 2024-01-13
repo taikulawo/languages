@@ -1,7 +1,7 @@
 #include <cmath>
 #include <cstdint>
 #include <string>
-#include <iostream>
+#include <cassert>
 // https://leetcode.cn/problems/validate-ip-address/description/
 class Solution {
   public:
@@ -11,7 +11,7 @@ class Solution {
                (ch >= 'a' && ch <= 'f');
     }
     bool is_valid_v6_segment(char *ch, int len) {
-        if (len > 4) {
+        if (len > 4 || len <= 0) {
             return false;
         }
         for (int i = 0; i < len; i++) {
@@ -23,18 +23,18 @@ class Solution {
     }
     int digit_to_number(char ch) { return ch - '0'; }
     bool is_valid_ipv4_segment(char *ch, int len) {
-        if (len >= 4) {
+        if (len >= 4 || len <= 0) {
+            return false;
+        }
+        if (len > 1 && ch[0] == '0') {
             return false;
         }
         uint32_t value = 0;
-        for (int i = 0; i < len; i ++) {
+        for (int i = 0; i < len; i++) {
             if (!this->is_digit(ch[i])) {
                 return false;
             }
             value += (this->digit_to_number(ch[i]) * std::pow(10, len - 1 - i));
-        }
-        if (len > 0 && ch[0] == '0') {
-            return false;
         }
         return value >= 0 && value <= 255;
     }
@@ -54,12 +54,18 @@ class Solution {
                 if (not_ipv4) {
                     goto errout;
                 }
+                if (i == queryIP.size() - 1) {
+                    goto errout;
+                }
                 v4_check_count--;
                 not_ipv6 = true;
                 len = &queryIP[i] - start;
                 goto check_v4;
             case ':':
                 if (not_ipv6) {
+                    goto errout;
+                }
+                if (i == queryIP.size() - 1) {
                     goto errout;
                 }
                 v6_check_count--;
@@ -115,14 +121,17 @@ class Solution {
 };
 
 int main(int argc, char *argv[]) {
-    std::string v4("172.16.254.1");
+    std::string v4("172.0.0.1");
     std::string v6 = "2001:db8:85a3:0:0:8A2E:0370:7334:";
+    std::string v61 = "2001:db8:85a3:0:0:8A2E:0370:7334";
     std::string no = "2001:db8:85a3:0:0:8A2E:0370:.7334";
     Solution s;
     std::string res = s.validIPAddress(v4);
-    std::cout << res;
+    assert(res == "IPv4");
     std::string res1 = s.validIPAddress(v6);
-    std::cout << res1;
+    assert(res1 == "Neither");
+    std::string res11 = s.validIPAddress(v6);
+    assert(res11 == "Neither");
     std::string res2 = s.validIPAddress(no);
-    std::cout << res2;
+    assert(res2 == "Neither");
 }
