@@ -27,11 +27,11 @@ class Solution {
             return false;
         }
         uint32_t value = 0;
-        for (int i = len - 1; i >= 0; i--) {
+        for (int i = 0; i < len; i ++) {
             if (!this->is_digit(ch[i])) {
                 return false;
             }
-            value += (this->digit_to_number(ch[i]) * std::pow(10, i));
+            value += (this->digit_to_number(ch[i]) * std::pow(10, len - 1 - i));
         }
         if (len > 0 && ch[0] == '0') {
             return false;
@@ -56,6 +56,7 @@ class Solution {
                 }
                 v4_check_count--;
                 not_ipv6 = true;
+                len = &queryIP[i] - start;
                 goto check_v4;
             case ':':
                 if (not_ipv6) {
@@ -63,18 +64,22 @@ class Solution {
                 }
                 v6_check_count--;
                 not_ipv4 = true;
+                len = &queryIP[i] - start;
                 goto check_v6;
 
             default:
                 // check final segment
                 if (i == queryIP.size() - 1) {
+                    len = &queryIP[i] - start + 1;
                     // last
                     if (not_ipv4 && not_ipv6) {
                         goto errout;
                     }
                     if (not_ipv4) {
+                        v6_check_count--;
                         goto check_v6;
                     } else if (not_ipv6) {
+                        v4_check_count--;
                         goto check_v4;
                     }
                 }
@@ -82,24 +87,24 @@ class Solution {
             }
 
         check_v4:
-            if (!this->is_valid_ipv4_segment(start, &queryIP[i] - start)) {
+            if (!this->is_valid_ipv4_segment(start, len)) {
                 goto errout;
             }
             if (v4_check_count < 0) {
                 goto errout;
-            } else if (v4_check_count == 0) {
+            } else if (v4_check_count == 0 && i == queryIP.size() - 1) {
                 // last time
                 return "IPv4";
             }
             start = &queryIP[i] + 1;
             continue;
         check_v6:
-            if (!this->is_valid_v6_segment(start, &queryIP[i] - start)) {
+            if (!this->is_valid_v6_segment(start, len)) {
                 goto errout;
             }
             if (v6_check_count < 0) {
                 goto errout;
-            } else if (v6_check_count == 0) {
+            } else if (v6_check_count == 0 && i == queryIP.size() - 1) {
                 return "IPv6";
             }
             start = &queryIP[i] + 1;
@@ -110,8 +115,14 @@ class Solution {
 };
 
 int main(int argc, char *argv[]) {
-    std::string str("172.16.254.1");
+    std::string v4("172.16.254.1");
+    std::string v6 = "2001:db8:85a3:0:0:8A2E:0370:7334:";
+    std::string no = "2001:db8:85a3:0:0:8A2E:0370:.7334";
     Solution s;
-    std::string res = s.validIPAddress(str);
+    std::string res = s.validIPAddress(v4);
     std::cout << res;
+    std::string res1 = s.validIPAddress(v6);
+    std::cout << res1;
+    std::string res2 = s.validIPAddress(no);
+    std::cout << res2;
 }
