@@ -1,7 +1,8 @@
 add_rules("plugin.compile_commands.autoupdate", {outputdir = "."})
 target("main")
     set_kind("binary")
-    add_files("src/main.c") 
+    set_languages("cxx11")
+    add_files("src/main.cc") 
 
 target("connect")
     -- link pthread library
