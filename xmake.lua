@@ -1,7 +1,7 @@
 add_rules("plugin.compile_commands.autoupdate", {outputdir = "."})
 target("main")
     set_kind("binary")
-    set_languages("cxx17")
+    set_languages("cxx14")
     add_files("src/main.cc") 
 
 target("connect")
