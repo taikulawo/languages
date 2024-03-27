@@ -3,6 +3,10 @@ target("main")
     set_kind("binary")
     set_languages("cxx14")
     add_files("src/main.cc") 
+target("pipe-fork-stderr")
+    set_kind("binary")
+    set_languages("cxx14")
+    add_files("src/pipe-fork-stderr.cc") 
 
 target("connect")
     -- link pthread library
