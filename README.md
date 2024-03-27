@@ -1,4 +1,4 @@
-C/C++ 程序
+探索隐藏的软件开发细节的C/C++ 代码
 
 xmake构建
 
@@ -19,6 +19,6 @@ xmake run main
 ```
 
 生成 compile_commands
-```
+```bash
 xmake project -k compile_commands
 ```
