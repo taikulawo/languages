@@ -7,6 +7,10 @@ target("pipe-fork-stderr")
     set_kind("binary")
     set_languages("cxx14")
     add_files("src/pipe-fork-stderr.cc") 
+target("pass_env_to_child")
+    set_kind("binary")
+    set_languages("cxx14")
+    add_files("src/pass_env_to_child.c") 
 
 target("connect")
     -- link pthread library
