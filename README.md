@@ -1,5 +1,9 @@
 探索计算机底层原理
 
+## TODO
+
+[] 从 xmake 切换到 cmake
+
 xmake构建
 
 编译运行
