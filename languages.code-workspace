@@ -1,10 +1,10 @@
 {
 	"folders": [
 		{
-			"path": "golang"
+			"path": "cpp"
 		},
 		{
-			"path": "cpp"
+			"path": "golang"
 		},
 		{
 			"path": "."
