@@ -1,10 +1,16 @@
-探索计算机底层原理
+编程语言练习
 
 ## TODO
 
 [] 从 xmake 切换到 cmake
 
 xmake构建
+
+## C++
+
+```bash
+cd cpp
+```
 
 编译运行
 
@@ -28,4 +34,24 @@ xmake run main
 
 ```bash
 xmake project -k compile_commands
+```
+
+## rust
+
+```bash
+cd rust
+```
+
+```
+cargo run --bin hello
+```
+
+## golang
+
+```bash
+cd golang
+```
+
+```
+go run hello.go
 ```
