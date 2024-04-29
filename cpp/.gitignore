@@ -1,0 +1,13 @@
+target/
+.xmake/
+build/
+.cache
+compile_commands.json
+
+# ignore all files except cc and c suffix
+src/*
+!src/*.cc
+!src/*.c
+leetcode/*
+!leetcode/*.cc
+!leetcode/*.c
