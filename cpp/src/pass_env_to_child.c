@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
+extern char **environ;
 static char *prog = "/bin/bash";
 static char *env[] = {"NAME=TEST", NULL};
 static char *const args[] = {"bash", "-c", "echo $0 && /usr/bin/env", NULL};
@@ -16,7 +17,7 @@ int main() {
     int ret = -1;
     int status = 0;
     printf("parent env\n");
-    for (char **env = __environ; *env != NULL; env++) {
+    for (char **env = environ; *env != NULL; env++) {
         printf("%s\n", *env);
     }
     ret = fork();
@@ -38,8 +39,8 @@ int main() {
         // 如果使用没有e后缀的exec家族函数，child env继承parent
         // execvp(prog, args);
 
-        // exec 传递 __environ 就能将parent的env原封不同传给child
-        // execle(prog, "bash", "-c", "/usr/bin/env", NULL, __environ);
+        // exec 传递 environ 就能将parent的env原封不同传给child
+        // execle(prog, "bash", "-c", "/usr/bin/env", NULL, environ);
 
         // execvpe(prog, args, env);
         perror("execle error");
