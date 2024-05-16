@@ -1,3 +1,7 @@
+*
+!*/
 target/
-src/
 !src/**/*.*
+!bin/**/*.*
+!Cargo.*
+!.gitignore
