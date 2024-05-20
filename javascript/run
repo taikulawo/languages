@@ -3,11 +3,12 @@
 // install
 // curl -fsSL https://deno.land/install.sh | sh
 import { $ } from "https://deno.land/x/zx_deno@1.2.2/mod.mjs";
+$.verbose = true;
+
 import { set } from "https://deno.land/x/lodash@4.17.15-es/lodash.js";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-$.verbose = true;
 
 const MAX_THREAD_NUM = os.cpus().length;
 const target = "10.4.47.9";
