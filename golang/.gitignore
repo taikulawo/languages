@@ -1,3 +1,6 @@
 *
+# ignore folder
+!*/
+# ignore suffix
 !*.*
 !go.mod

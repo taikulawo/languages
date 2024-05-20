@@ -48,10 +48,12 @@ cargo run --bin hello
 
 ## golang
 
+golang同一目录只能有一个main函数，每个binary都放到单独的folder
+
 ```bash
 cd golang
 ```
 
-```
-go run hello.go
+```bash
+go run hello/main.go
 ```
