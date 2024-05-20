@@ -2,6 +2,8 @@
 // curl -fsSL https://deno.land/install.sh | sh
 import { $ } from "npm:zx";
 $.verbose = true;
-
-await $`echo hello`
-console.log("world")
+interface FOO {
+    foo: string;
+}
+await $`echo hello`;
+console.log("world");
