@@ -1,6 +1,7 @@
 #!/usr/bin/env -S deno run --allow-all --ext=ts
 // curl -fsSL https://deno.land/install.sh | sh
-import { $ } from "https://deno.land/x/zx_deno@1.2.2/mod.mjs";
+import { $ } from "npm:zx";
+$.verbose = true;
 
 await $`echo hello`
 console.log("world")

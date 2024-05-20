@@ -2,7 +2,7 @@
 
 // install
 // curl -fsSL https://deno.land/install.sh | sh
-import { $ } from "https://deno.land/x/zx_deno@1.2.2/mod.mjs";
+import { $ } from "npm:zx";
 $.verbose = true;
 
 import { set } from "https://deno.land/x/lodash@4.17.15-es/lodash.js";
