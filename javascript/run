@@ -113,7 +113,7 @@ for (const conn of connections) {
 }
 
 await fs.writeFile(
-    path.join(__dirname, "benchmark.json"),
+    path.join(import.meta.dirname!, "benchmark.json"),
     JSON.stringify(benchmarkResult),
     {
         encoding: "utf-8",
