@@ -4,6 +4,8 @@ use std::{
     task::{Context, RawWaker, RawWakerVTable, Waker},
 };
 
+use tokio::task;
+
 struct Foo22<'a> {
     cx: Rc<RefCell<Context<'a>>>,
 }
@@ -48,16 +50,28 @@ impl Vdata {
 }
 type Signer<'a> = Box<dyn Bar + 'a>;
 
-fn main() {
-    let b = Box::into_raw(Box::new(Vdata {}));
-    let raw_waker = RawWaker::new(b as *const _, &TABLE);
-    let waker = unsafe { Waker::from_raw(raw_waker) };
-    let ctx = Context::from_waker(&waker);
-    let r = Rc::new(RefCell::new(ctx));
-    let f: Signer = Box::new(Foo22 { cx: r.clone() });
-    let ctx = Context::from_waker(&waker);
-    *r.borrow_mut() = ctx;
-    f.say();
-    let ctx = Context::from_waker(&waker);
-    *r.borrow_mut() = ctx;
+#[tokio::main]
+async fn main() {
+    let local = task::LocalSet::new();
+
+    task::LocalSet::new()
+        .run_until(async move {
+            local
+                .spawn_local(async move {
+                    let b = Box::into_raw(Box::new(Vdata {}));
+                    let raw_waker = RawWaker::new(b as *const _, &TABLE);
+                    let waker = unsafe { Waker::from_raw(raw_waker) };
+                    let ctx = Context::from_waker(&waker);
+                    let r = Rc::new(RefCell::new(ctx));
+                    let f: Signer = Box::new(Foo22 { cx: r.clone() });
+                    let ctx = Context::from_waker(&waker);
+                    *r.borrow_mut() = ctx;
+                    f.say();
+                    let ctx = Context::from_waker(&waker);
+                    *r.borrow_mut() = ctx;
+                })
+                .await
+                .unwrap();
+        })
+        .await;
 }
