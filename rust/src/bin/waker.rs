@@ -53,25 +53,38 @@ type Signer<'a> = Box<dyn Bar + 'a>;
 #[tokio::main]
 async fn main() {
     let local = task::LocalSet::new();
-
-    task::LocalSet::new()
-        .run_until(async move {
-            local
-                .spawn_local(async move {
-                    let b = Box::into_raw(Box::new(Vdata {}));
-                    let raw_waker = RawWaker::new(b as *const _, &TABLE);
-                    let waker = unsafe { Waker::from_raw(raw_waker) };
-                    let ctx = Context::from_waker(&waker);
-                    let r = Rc::new(RefCell::new(ctx));
-                    let f: Signer = Box::new(Foo22 { cx: r.clone() });
-                    let ctx = Context::from_waker(&waker);
-                    *r.borrow_mut() = ctx;
-                    f.say();
-                    let ctx = Context::from_waker(&waker);
-                    *r.borrow_mut() = ctx;
-                })
-                .await
-                .unwrap();
-        })
-        .await;
+    // 为什么current thread spawn 也要求Future Send？
+    // current thread只有一个线程，也可以将rt从thread a move 到thread b
+    // 使得future都会被Send到另一个thread
+    let f = local.run_until(async move {
+        tokio::spawn(async move {
+            let b = Box::into_raw(Box::new(Vdata {}));
+            let raw_waker = RawWaker::new(b as *const _, &TABLE);
+            let waker = unsafe { Waker::from_raw(raw_waker) };
+            let ctx = Context::from_waker(&waker);
+            let r = Rc::new(RefCell::new(ctx));
+            let f: Signer = Box::new(Foo22 { cx: r.clone() });
+            let r = r;
+            let ctx = Context::from_waker(&waker);
+            *r.borrow_mut() = ctx;
+            f.say();
+            let ctx = Context::from_waker(&waker);
+            *r.borrow_mut() = ctx;
+        });
+        tokio::spawn(async move {
+            let b = Box::into_raw(Box::new(Vdata {}));
+            let raw_waker = RawWaker::new(b as *const _, &TABLE);
+            let waker = unsafe { Waker::from_raw(raw_waker) };
+            let ctx = Context::from_waker(&waker);
+            let r = Rc::new(RefCell::new(ctx));
+            let f: Signer = Box::new(Foo22 { cx: r.clone() });
+            let r = r;
+            let ctx = Context::from_waker(&waker);
+            *r.borrow_mut() = ctx;
+            f.say();
+            let ctx = Context::from_waker(&waker);
+            *r.borrow_mut() = ctx;
+        });
+    });
+    f.await;
 }
