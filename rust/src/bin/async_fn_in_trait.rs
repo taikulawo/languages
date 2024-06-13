@@ -1,3 +1,4 @@
+#![allow(dead_code, unused)]
 use async_trait::async_trait;
 
 trait Foo {
