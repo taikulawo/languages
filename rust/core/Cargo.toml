@@ -10,4 +10,5 @@ edition = "2021"
 async-trait = "0.1.80"
 reqwest = { version = "0.12.5", features = ["json"] }
 rustls = { path = "../rustls/rustls", package = "rustls"}
+rustls-pemfile = "2.1.2"
 tokio = { version = "1.38.0", features = ["full"] }
