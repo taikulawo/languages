@@ -22,6 +22,8 @@ fn main() {
     let foo = Foo {};
     // // 泛型trait无法装箱
     // // vtable只有一份，无法为出现的每个T实现
+    // // BufExt#get 根据T不同能产生不同的函数，一个vtable不能满足需求
+    // // Box<dyn BufExt> 从外部来看不知道方法是generic的，而vtable必须确定，且只有一个。
     // let b: Box<dyn BufExt> = Box::new(foo);
 
     // 但 associated type 可以
