@@ -1566,6 +1566,7 @@ dependencies = [
 name = "rustls"
 version = "0.23.10"
 dependencies = [
+ "async-trait",
  "aws-lc-rs",
  "base64",
  "bencher",
@@ -1586,8 +1587,8 @@ dependencies = [
  "serde",
  "serde_json",
  "subtle",
- "tikv-jemallocator",
  "time",
+ "tokio 1.38.0",
  "webpki-roots",
  "zeroize",
  "zlib-rs",
@@ -1877,26 +1878,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06794f8f6c5c898b3275aebefa6b8a1cb24cd2c6c79397ab15774837a0bc5755"
 dependencies = [
  "winapi-util",
-]
-
-[[package]]
-name = "tikv-jemalloc-sys"
-version = "0.5.4+5.3.0-patched"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9402443cb8fd499b6f327e40565234ff34dbda27460c5b47db0db77443dd85d1"
-dependencies = [
- "cc",
- "libc",
-]
-
-[[package]]
-name = "tikv-jemallocator"
-version = "0.5.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "965fe0c26be5c56c94e38ba547249074803efd52adfb66de62107d95aab3eaca"
-dependencies = [
- "libc",
- "tikv-jemalloc-sys",
 ]
 
 [[package]]
@@ -2735,6 +2716,6 @@ dependencies = [
 
 [[package]]
 name = "zlib-rs"
-version = "0.2.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "059dbb1dfca0db0ceaa1f0b5375158361df7ce98a20a1e93041154034c99e2d2"
+checksum = "c52105e2dc6760ec88755876659dc301b51f6728f3b7a1bbdeeb66c6af4d44a1"
