@@ -1,4 +1,0 @@
-[submodule "rustls"]
-	path = rust/rustls
-	url = https://github.com/taikulawo/rustls
-	branch = async
