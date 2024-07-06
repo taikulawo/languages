@@ -1,6 +1,8 @@
+#![allow(unused)]
+#[allow(unused_variables)]
 use std::{future::Future, io};
 
-use future_utils::BoxFuture;
+use futures::future::BoxFuture;
 
 #[tokio::main]
 async fn main() {}

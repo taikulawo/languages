@@ -1,3 +1,5 @@
+#![allow(unused)]
+#[allow(unused_variables)]
 trait Decode {}
 trait BufExt {
     fn get<T: Decode>(&mut self, inner: T);
@@ -8,12 +10,12 @@ trait ReaderExt {
 }
 struct Foo {}
 impl BufExt for Foo {
-    fn get<T: Decode>(&mut self, inner: T) {}
+    fn get<T: Decode>(&mut self, _inner: T) {}
 }
 struct Bar {}
 impl ReaderExt for Bar {
     type Item = Decoder;
-    fn get(&mut self, inner: Self::Item) {}
+    fn get(&mut self, _inner: Self::Item) {}
 }
 struct Decoder {}
 impl Decode for Decoder {}

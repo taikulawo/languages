@@ -1,1 +1,15 @@
-workspace = { members = ["core"], resolver = "2" }
+
+[package]
+name = "rust"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+async-trait = "0.1.80"
+future-utils = "0.12.1"
+futures = "0.3.30"
+reqwest = { version = "0.12.5", features = ["json"] }
+rustls-pemfile = "2.1.2"
+tokio = { version = "1.38.0", features = ["full"] }

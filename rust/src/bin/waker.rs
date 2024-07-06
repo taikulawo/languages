@@ -1,3 +1,5 @@
+#![allow(unused)]
+#[allow(unused_variables)]
 use std::{
     cell::RefCell,
     rc::Rc,
