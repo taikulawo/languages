@@ -1028,8 +1028,10 @@ dependencies = [
  "async-trait",
  "future-utils",
  "futures 0.3.30",
+ "libc",
  "reqwest",
  "rustls-pemfile",
+ "socket2",
  "tokio 1.38.0",
 ]
 
