@@ -235,8 +235,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     let addr: SockAddr = BIND_ADDR.parse::<SocketAddr>()?.into();
     s.set_nodelay(true)?;
     s.set_reuse_address(true)?;
-    // 如果把 set_reuse_port 注释，快速第二次运行，第二个请求读到0导致panic
-    // s.set_reuse_port(true).unwrap();
+    // 如果把 set_reuse_port 注释，快速连续运行，第二个请求读到0导致panic
+    // 猜测：虽然从fd获得了listener，没走bind，但新进程的 tcplistener 内部bind不了监听地址，而reuseport能bind
+    s.set_reuse_port(true).unwrap();
     s.bind(&addr).unwrap();
     s.listen(4096).unwrap();
     let listener: TcpListener = s.into();
