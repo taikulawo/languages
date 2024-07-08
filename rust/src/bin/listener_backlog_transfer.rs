@@ -5,7 +5,7 @@ use std::{
     fmt::Display,
     io::{self, IoSlice, IoSliceMut, Read, Write},
     net::{SocketAddr, TcpListener, TcpStream},
-    os::fd::{AsRawFd, FromRawFd, RawFd},
+    os::fd::{AsFd, AsRawFd, FromRawFd, IntoRawFd, RawFd},
     sync::{Arc, Condvar, Mutex},
     thread::{self, sleep},
     time::{self, Duration},
@@ -29,11 +29,12 @@ const MAX_RETRY: usize = 5;
 #[cfg(target_os = "linux")]
 const RETRY_INTERVAL: time::Duration = time::Duration::from_secs(1);
 const RESPONSE: &[u8] = b"HTTP";
+use std::os::fd::BorrowedFd;
 #[cfg(target_os = "linux")]
-fn accept_with_retry(listen_fd: i32) -> anyhow::Result<i32> {
+fn accept_with_retry(listen_fd: BorrowedFd<'_>) -> anyhow::Result<i32> {
     let mut retried = 0;
     loop {
-        match socket::accept(listen_fd) {
+        match socket::accept(listen_fd.as_raw_fd()) {
             Ok(fd) => return Ok(fd),
             Err(e) => {
                 if retried > MAX_RETRY {
@@ -45,7 +46,7 @@ fn accept_with_retry(listen_fd: i32) -> anyhow::Result<i32> {
                             "No incoming socket transfer, sleep {RETRY_INTERVAL:?} and try again"
                         );
                         retried += 1;
-                        thread::sleep(Duration::from_secs(5));
+                        thread::sleep(Duration::from_secs(2));
                     }
                     _ => {
                         eprintln!("Error accepting socket transfer: {e}");
@@ -78,6 +79,7 @@ fn do_upgrade() {
         break;
     }
 }
+// TODO pidfd_getfd syscall
 fn get_fds_from<P>(path: &P, payload: &mut [u8]) -> anyhow::Result<(Vec<RawFd>, usize)>
 where
     P: ?Sized + NixPath + Display,
@@ -107,11 +109,11 @@ where
     .unwrap();
     let backlog = Backlog::new(8).unwrap();
     socket::listen(&listen_fd, backlog).unwrap();
-    let fd = match accept_with_retry(listen_fd.as_raw_fd()) {
+    let fd = match accept_with_retry(listen_fd.as_fd()) {
         Ok(fd) => fd,
         Err(err) => {
             eprintln!("read error {err:?}");
-            if nix::unistd::close(listen_fd.as_raw_fd()).is_ok() {
+            if nix::unistd::close(listen_fd.into_raw_fd()).is_ok() {
                 nix::unistd::unlink(path).unwrap();
             }
             return Err(anyhow!(err));
@@ -138,7 +140,7 @@ where
     }
 
     //cleanup
-    if nix::unistd::close(listen_fd.as_raw_fd()).is_ok() {
+    if nix::unistd::close(listen_fd.into_raw_fd()).is_ok() {
         nix::unistd::unlink(path).unwrap();
     }
 
@@ -215,7 +217,7 @@ where
         }
         Err(err) => Err(err),
     };
-    let _ = nix::unistd::close(send_fd.as_raw_fd());
+    let _ = nix::unistd::close(send_fd.into_raw_fd());
     result
 }
 
@@ -242,6 +244,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     s.listen(4096).unwrap();
     let listener: TcpListener = s.into();
     let fd = listener.as_raw_fd();
+    let mut fds = Fds::new();
+    fds.add(BIND_ADDR.into(), fd);
     let pair = Arc::new((Mutex::new(false), Condvar::new()));
     let pair2 = Arc::clone(&pair);
     std::thread::spawn(move || {
@@ -279,12 +283,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     let h = sub.spawn().unwrap();
     sleep(Duration::from_secs(1));
 
-    let mut fds = Fds::new();
-    fds.add(BIND_ADDR.into(), fd);
     fds.send_to_sock(UNIX_PATH).unwrap();
     // fork，将fd发到别的进程
-    // let new_sock = socket2::Socket::
-    sleep(Duration::from_secs(5));
+    sleep(Duration::from_secs(2));
     let (lock, cvar) = &*pair2;
     cvar.notify_one();
     j_h.join().unwrap();
