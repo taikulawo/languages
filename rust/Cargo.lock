@@ -1029,6 +1029,7 @@ dependencies = [
  "future-utils",
  "futures 0.3.30",
  "libc",
+ "openssl",
  "reqwest",
  "rustls-pemfile",
  "serde",

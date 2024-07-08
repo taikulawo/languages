@@ -11,6 +11,7 @@ async-trait = "0.1.80"
 future-utils = "0.12.1"
 futures = "0.3.30"
 libc = "0.2.155"
+openssl = "0.10.64"
 reqwest = { version = "0.12.5", features = ["json"] }
 rustls-pemfile = "2.1.2"
 serde = { version = "1.0.204", features = ["derive"] }
