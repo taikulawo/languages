@@ -3,9 +3,10 @@ use std::{
     env::{self, current_exe, Args},
     error::Error,
     fmt::Display,
-    io::{self, IoSlice, IoSliceMut, Write},
+    io::{self, IoSlice, IoSliceMut, Read, Write},
     net::{SocketAddr, TcpListener, TcpStream},
     os::fd::{AsRawFd, FromRawFd, RawFd},
+    sync::{Arc, Condvar, Mutex},
     thread::{self, sleep},
     time::{self, Duration},
 };
@@ -27,7 +28,7 @@ const BIND_ADDR: &'static str = "0.0.0.0:14400";
 const MAX_RETRY: usize = 5;
 #[cfg(target_os = "linux")]
 const RETRY_INTERVAL: time::Duration = time::Duration::from_secs(1);
-
+const RESPONSE: &[u8] = b"HTTP";
 #[cfg(target_os = "linux")]
 fn accept_with_retry(listen_fd: i32) -> anyhow::Result<i32> {
     let mut retried = 0;
@@ -44,10 +45,11 @@ fn accept_with_retry(listen_fd: i32) -> anyhow::Result<i32> {
                             "No incoming socket transfer, sleep {RETRY_INTERVAL:?} and try again"
                         );
                         retried += 1;
-                        thread::sleep(RETRY_INTERVAL);
+                        thread::sleep(Duration::from_secs(5));
                     }
                     _ => {
                         eprintln!("Error accepting socket transfer: {e}");
+                        // fallback to cool start
                         return Err(anyhow!(e));
                     }
                 }
@@ -62,6 +64,7 @@ fn do_upgrade() {
     let mut s = unsafe { Socket::from_raw_fd(*fd) };
     s.listen(65535).unwrap();
     let listener: TcpListener = s.into();
+    println!("new process start listen ");
     loop {
         let (mut stream, addr) = match listener.accept() {
             Ok(x) => x,
@@ -70,7 +73,9 @@ fn do_upgrade() {
                 continue;
             }
         };
-        stream.write(b"HTTP").unwrap();
+        stream.write_all(RESPONSE).unwrap();
+        println!("accept second connection");
+        break;
     }
 }
 fn get_fds_from<P>(path: &P, payload: &mut [u8]) -> anyhow::Result<(Vec<RawFd>, usize)>
@@ -90,9 +95,7 @@ where
         Ok(()) => {
             println!("unlink done");
         }
-        Err(err) => {
-            eprintln!("unlink error {err}")
-        }
+        Err(_) => {}
     };
     socket::bind(listen_fd.as_raw_fd(), &unix_addr).unwrap();
     sys::stat::fchmodat(
@@ -114,6 +117,7 @@ where
             return Err(anyhow!(err));
         }
     };
+    println!("received fd {}", fd);
     let mut io_vec = [IoSliceMut::new(payload); 1];
     let mut cmsg_buf = nix::cmsg_space!([RawFd; MAX_FDS]);
     let msg: RecvMsg<UnixAddr> = socket::recvmsg(
@@ -149,13 +153,12 @@ where
         SockType::Stream,
         SockFlag::SOCK_NONBLOCK,
         None,
-    )?
-    .as_raw_fd();
+    )?;
     let unix_addr = UnixAddr::new(path)?;
     let mut nonblocking_polls = 0;
     let mut retried = 0;
     let conn_result: anyhow::Result<usize> = loop {
-        match socket::connect(send_fd, &unix_addr) {
+        match socket::connect(send_fd.as_raw_fd(), &unix_addr) {
             Ok(_) => break Ok(0),
             Err(err) => match err {
                 Errno::ENOENT | Errno::ECONNREFUSED | Errno::EACCES => {
@@ -184,7 +187,7 @@ where
             let cmsg = [scm; 1];
             loop {
                 match socket::sendmsg(
-                    send_fd,
+                    send_fd.as_raw_fd(),
                     &io_vec,
                     &cmsg,
                     socket::MsgFlags::empty(),
@@ -212,9 +215,10 @@ where
         }
         Err(err) => Err(err),
     };
-    nix::unistd::close(send_fd).unwrap();
+    let _ = nix::unistd::close(send_fd.as_raw_fd());
     result
 }
+
 fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
     for ar in args {
@@ -229,32 +233,65 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut s = Socket::new(Domain::IPV4, Type::STREAM, None)?;
 
     let addr: SockAddr = BIND_ADDR.parse::<SocketAddr>()?.into();
-    s.bind(&addr)?;
-    s.listen(4096)?;
     s.set_nodelay(true)?;
     s.set_reuse_address(true)?;
+    // 如果把 set_reuse_port 注释，快速第二次运行，第二个请求读到0导致panic
+    // s.set_reuse_port(true).unwrap();
+    s.bind(&addr).unwrap();
+    s.listen(4096).unwrap();
     let listener: TcpListener = s.into();
     let fd = listener.as_raw_fd();
-    let handler = std::thread::spawn(move || loop {
-        let (s, addr) = match listener.accept() {
-            Ok(x) => x,
-            Err(err) => continue,
-        };
-        // 不处理，卡住，让backlog存连接
-        sleep(Duration::from_secs(9999999));
+    let pair = Arc::new((Mutex::new(false), Condvar::new()));
+    let pair2 = Arc::clone(&pair);
+    std::thread::spawn(move || {
+        loop {
+            let (s, addr) = match listener.accept() {
+                Ok(x) => x,
+                Err(err) => continue,
+            };
+            println!("accept first connection");
+            let (lock, cvar) = &*pair;
+            let g = lock.lock().unwrap();
+            cvar.wait(g).unwrap();
+            break;
+        }
+        println!("drop old listener");
+        drop(listener)
     });
+    // 第一个请求挂住
+    std::thread::spawn(move || {
+        connect_addr();
+    });
+    let j_h = std::thread::spawn(move || {
+        let mut stream = TcpStream::connect(BIND_ADDR).unwrap();
+        println!("send second request, waiting for response");
+        let mut s = vec![0; 1024];
+        let n = stream.read(&mut s).unwrap();
+        println!("second request done");
+        assert_eq!(RESPONSE, &s[..n]);
+    });
+    sleep(Duration::from_secs(1));
+
     let exe = current_exe().unwrap();
-    sleep(Duration::from_secs(10));
     let mut sub = std::process::Command::new(exe);
     sub.arg("--upgrade");
-    let mut h = sub.spawn().unwrap();
-    sleep(Duration::from_secs(2));
+    let h = sub.spawn().unwrap();
+    sleep(Duration::from_secs(1));
+
     let mut fds = Fds::new();
     fds.add(BIND_ADDR.into(), fd);
     fds.send_to_sock(UNIX_PATH).unwrap();
     // fork，将fd发到别的进程
     // let new_sock = socket2::Socket::
+    sleep(Duration::from_secs(5));
+    let (lock, cvar) = &*pair2;
+    cvar.notify_one();
+    j_h.join().unwrap();
     Ok(())
+}
+fn connect_addr() {
+    let mut stream = TcpStream::connect(BIND_ADDR).unwrap();
+    sleep(Duration::MAX);
 }
 struct Fds {
     map: HashMap<String, RawFd>,
@@ -287,6 +324,7 @@ impl Fds {
     {
         let (vec_key, vec_fds) = self.serialize();
         let mut ser_buf: [u8; 2048] = [0; 2048];
+        println!("send fd {:?}", vec_fds);
         let ser_key_size = serialize_vec_string(&vec_key, &mut ser_buf);
         send_fds_to(vec_fds, &ser_buf[..ser_key_size], path)
     }
