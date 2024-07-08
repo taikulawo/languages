@@ -1,34 +1,219 @@
 use std::{
-    env::{self, Args},
+    collections::HashMap,
+    env::{self, current_exe, Args},
     error::Error,
-    io,
-    net::{SocketAddr, TcpListener},
-    os::fd::{AsRawFd, RawFd},
-    process::exit,
-    thread::sleep,
-    time::Duration,
+    fmt::Display,
+    io::{self, IoSlice, IoSliceMut, Write},
+    net::{SocketAddr, TcpListener, TcpStream},
+    os::fd::{AsRawFd, FromRawFd, RawFd},
+    thread::{self, sleep},
+    time::{self, Duration},
 };
 
-use libc::fork;
+use anyhow::anyhow;
 use nix::{
-    sys::socket::{socket, AddressFamily, SockFlag, SockType},
+    errno::Errno,
+    sys::{
+        self,
+        socket::{self, socket, AddressFamily, Backlog, RecvMsg, SockFlag, SockType, UnixAddr},
+        stat::{self, stat},
+    },
     NixPath,
 };
 use socket2::{Domain, SockAddr, Socket, Type};
+const UNIX_PATH: &'static str = "/var/run/transfer.sock";
+const BIND_ADDR: &'static str = "0.0.0.0:14400";
+#[cfg(target_os = "linux")]
+const MAX_RETRY: usize = 5;
+#[cfg(target_os = "linux")]
+const RETRY_INTERVAL: time::Duration = time::Duration::from_secs(1);
 
-fn do_upgrade() {}
-
-fn send_fd_to<P>(fd: Vec<RawFd>, payload: &[u8], path: &P) -> io::Result<usize>
+#[cfg(target_os = "linux")]
+fn accept_with_retry(listen_fd: i32) -> anyhow::Result<i32> {
+    let mut retried = 0;
+    loop {
+        match socket::accept(listen_fd) {
+            Ok(fd) => return Ok(fd),
+            Err(e) => {
+                if retried > MAX_RETRY {
+                    return Err(anyhow!(e));
+                }
+                match e {
+                    Errno::EAGAIN => {
+                        eprintln!(
+                            "No incoming socket transfer, sleep {RETRY_INTERVAL:?} and try again"
+                        );
+                        retried += 1;
+                        thread::sleep(RETRY_INTERVAL);
+                    }
+                    _ => {
+                        eprintln!("Error accepting socket transfer: {e}");
+                        return Err(anyhow!(e));
+                    }
+                }
+            }
+        }
+    }
+}
+fn do_upgrade() {
+    let mut fds = Fds::new();
+    fds.get_from_sock(UNIX_PATH).unwrap();
+    let fd = fds.get(BIND_ADDR).unwrap();
+    let mut s = unsafe { Socket::from_raw_fd(*fd) };
+    s.listen(65535).unwrap();
+    let listener: TcpListener = s.into();
+    loop {
+        let (mut stream, addr) = match listener.accept() {
+            Ok(x) => x,
+            Err(err) => {
+                eprintln!("accept error {err:?}");
+                continue;
+            }
+        };
+        stream.write(b"HTTP").unwrap();
+    }
+}
+fn get_fds_from<P>(path: &P, payload: &mut [u8]) -> anyhow::Result<(Vec<RawFd>, usize)>
 where
-    P: NixPath,
+    P: ?Sized + NixPath + Display,
+{
+    const MAX_FDS: usize = 32;
+    let listen_fd = socket::socket(
+        AddressFamily::Unix,
+        SockType::Stream,
+        SockFlag::SOCK_NONBLOCK,
+        None,
+    )
+    .unwrap();
+    let unix_addr = UnixAddr::new(path).unwrap();
+    match nix::unistd::unlink(path) {
+        Ok(()) => {
+            println!("unlink done");
+        }
+        Err(err) => {
+            eprintln!("unlink error {err}")
+        }
+    };
+    socket::bind(listen_fd.as_raw_fd(), &unix_addr).unwrap();
+    sys::stat::fchmodat(
+        None,
+        path,
+        stat::Mode::all(),
+        stat::FchmodatFlags::FollowSymlink,
+    )
+    .unwrap();
+    let backlog = Backlog::new(8).unwrap();
+    socket::listen(&listen_fd, backlog).unwrap();
+    let fd = match accept_with_retry(listen_fd.as_raw_fd()) {
+        Ok(fd) => fd,
+        Err(err) => {
+            eprintln!("read error {err:?}");
+            if nix::unistd::close(listen_fd.as_raw_fd()).is_ok() {
+                nix::unistd::unlink(path).unwrap();
+            }
+            return Err(anyhow!(err));
+        }
+    };
+    let mut io_vec = [IoSliceMut::new(payload); 1];
+    let mut cmsg_buf = nix::cmsg_space!([RawFd; MAX_FDS]);
+    let msg: RecvMsg<UnixAddr> = socket::recvmsg(
+        fd,
+        &mut io_vec,
+        Some(&mut cmsg_buf),
+        socket::MsgFlags::empty(),
+    )
+    .unwrap();
+
+    let mut fds: Vec<RawFd> = Vec::new();
+    for cmsg in msg.cmsgs().unwrap() {
+        if let socket::ControlMessageOwned::ScmRights(mut vec_fds) = cmsg {
+            fds.append(&mut vec_fds)
+        } else {
+            eprintln!("Unexpected control messages: {cmsg:?}")
+        }
+    }
+
+    //cleanup
+    if nix::unistd::close(listen_fd.as_raw_fd()).is_ok() {
+        nix::unistd::unlink(path).unwrap();
+    }
+
+    Ok((fds, msg.bytes))
+}
+fn send_fds_to<P>(fds: Vec<RawFd>, payload: &[u8], path: &P) -> anyhow::Result<usize>
+where
+    P: ?Sized + NixPath + Display,
 {
     let send_fd = socket(
         AddressFamily::Unix,
         SockType::Stream,
         SockFlag::SOCK_NONBLOCK,
         None,
-    );
-    Ok(0)
+    )?
+    .as_raw_fd();
+    let unix_addr = UnixAddr::new(path)?;
+    let mut nonblocking_polls = 0;
+    let mut retried = 0;
+    let conn_result: anyhow::Result<usize> = loop {
+        match socket::connect(send_fd, &unix_addr) {
+            Ok(_) => break Ok(0),
+            Err(err) => match err {
+                Errno::ENOENT | Errno::ECONNREFUSED | Errno::EACCES => {
+                    retried += 1;
+                    if retried > 3 {
+                        eprintln!("max retry exceeded");
+                        break Err(anyhow!(err));
+                    }
+                }
+                Errno::EINPROGRESS => {
+                    nonblocking_polls += 1;
+                    if nonblocking_polls >= 3 {
+                        eprintln!("err");
+                        break Err(anyhow!(err));
+                    }
+                }
+                _ => break Err(anyhow!(err)),
+            },
+        }
+    };
+    use nix::sys::socket::ControlMessage;
+    let result = match conn_result {
+        Ok(..) => {
+            let io_vec = [IoSlice::new(payload); 1];
+            let scm = ControlMessage::ScmRights(fds.as_slice());
+            let cmsg = [scm; 1];
+            loop {
+                match socket::sendmsg(
+                    send_fd,
+                    &io_vec,
+                    &cmsg,
+                    socket::MsgFlags::empty(),
+                    None::<&UnixAddr>,
+                ) {
+                    Ok(result) => break Ok(result),
+                    Err(e) => match e {
+                        /* handle nonblocking IO */
+                        Errno::EAGAIN => {
+                            nonblocking_polls += 1;
+                            if nonblocking_polls >= 3 {
+                                eprintln!(
+                                    "Sendmsg() not ready after retries when sending socket to: {}",
+                                    path
+                                );
+                                break Err(anyhow!(e));
+                            }
+                            eprintln!("Sendmsg() not ready, will try again in {:?}", 3);
+                            thread::sleep(Duration::from_secs(3));
+                        }
+                        _ => break Err(anyhow!(e)),
+                    },
+                }
+            }
+        }
+        Err(err) => Err(err),
+    };
+    nix::unistd::close(send_fd).unwrap();
+    result
 }
 fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
@@ -42,8 +227,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }
     let mut s = Socket::new(Domain::IPV4, Type::STREAM, None)?;
-    let bind_addr = "0.0.0.0:14400";
-    let addr: SockAddr = bind_addr.parse::<SocketAddr>()?.into();
+
+    let addr: SockAddr = BIND_ADDR.parse::<SocketAddr>()?.into();
     s.bind(&addr)?;
     s.listen(4096)?;
     s.set_nodelay(true)?;
@@ -58,26 +243,74 @@ fn main() -> Result<(), Box<dyn Error>> {
         // 不处理，卡住，让backlog存连接
         sleep(Duration::from_secs(9999999));
     });
+    let exe = current_exe().unwrap();
     sleep(Duration::from_secs(10));
-    unsafe {
-        let pid = fork();
-        match pid {
-            1.. => {
-                // parent
-            }
-            0 => {
-                // child
-            }
-            _ => {
-                eprintln!("fork error");
-                exit(0)
-            }
-        }
-        if pid == 0 {
-            // child
-        }
-    }
+    let mut sub = std::process::Command::new(exe);
+    sub.arg("--upgrade");
+    let mut h = sub.spawn().unwrap();
+    sleep(Duration::from_secs(2));
+    let mut fds = Fds::new();
+    fds.add(BIND_ADDR.into(), fd);
+    fds.send_to_sock(UNIX_PATH).unwrap();
     // fork，将fd发到别的进程
     // let new_sock = socket2::Socket::
     Ok(())
+}
+struct Fds {
+    map: HashMap<String, RawFd>,
+}
+
+impl Fds {
+    pub fn new() -> Self {
+        Self {
+            map: HashMap::new(),
+        }
+    }
+    pub fn add(&mut self, bind: String, fd: RawFd) {
+        self.map.insert(bind, fd);
+    }
+    pub fn get(&self, bind: &str) -> Option<&RawFd> {
+        self.map.get(bind)
+    }
+    pub fn serialize(&self) -> (Vec<String>, Vec<RawFd>) {
+        self.map.iter().map(|(key, val)| (key.clone(), val)).unzip()
+    }
+    pub fn deserialize(&mut self, binds: Vec<String>, fds: Vec<RawFd>) {
+        assert_eq!(binds.len(), fds.len());
+        for (bind, fd) in binds.into_iter().zip(fds) {
+            self.map.insert(bind, fd);
+        }
+    }
+    pub fn send_to_sock<P>(&self, path: &P) -> anyhow::Result<usize>
+    where
+        P: ?Sized + NixPath + std::fmt::Display,
+    {
+        let (vec_key, vec_fds) = self.serialize();
+        let mut ser_buf: [u8; 2048] = [0; 2048];
+        let ser_key_size = serialize_vec_string(&vec_key, &mut ser_buf);
+        send_fds_to(vec_fds, &ser_buf[..ser_key_size], path)
+    }
+    pub fn get_from_sock<P>(&mut self, path: &P) -> anyhow::Result<()>
+    where
+        P: ?Sized + NixPath + std::fmt::Display,
+    {
+        let mut de_buf: [u8; 2048] = [0; 2048];
+        let (fds, bytes) = get_fds_from(path, &mut de_buf)?;
+        let keys = deserialize_vec_string(&de_buf[..bytes])?;
+        self.deserialize(keys, fds);
+        Ok(())
+    }
+}
+
+fn serialize_vec_string(vec_string: &[String], mut buf: &mut [u8]) -> usize {
+    // There are many ways to do this. Serde is probably the way to go
+    // But let's start with something simple: space separated strings
+    let joined = vec_string.join(" ");
+    // TODO: check the buf is large enough
+    buf.write(joined.as_bytes()).unwrap()
+}
+
+fn deserialize_vec_string(buf: &[u8]) -> anyhow::Result<Vec<String>> {
+    let joined = std::str::from_utf8(buf)?;
+    Ok(joined.split_ascii_whitespace().map(String::from).collect())
 }
