@@ -76,7 +76,6 @@ fn do_upgrade() {
         };
         stream.write_all(RESPONSE).unwrap();
         println!("accept second connection");
-        break;
     }
 }
 // TODO pidfd_getfd syscall
