@@ -1,9 +1,9 @@
 use std::{
     collections::HashMap,
-    env::{self, current_exe, Args},
+    env::{self, current_exe},
     error::Error,
     fmt::Display,
-    io::{self, IoSlice, IoSliceMut, Read, Write},
+    io::{IoSlice, IoSliceMut, Read, Write},
     net::{SocketAddr, TcpListener, TcpStream},
     os::fd::{AsFd, AsRawFd, FromRawFd, IntoRawFd, RawFd},
     sync::{Arc, Condvar, Mutex},
@@ -17,7 +17,7 @@ use nix::{
     sys::{
         self,
         socket::{self, socket, AddressFamily, Backlog, RecvMsg, SockFlag, SockType, UnixAddr},
-        stat::{self, stat},
+        stat,
     },
     NixPath,
 };
@@ -75,7 +75,7 @@ fn do_upgrade() {
             }
         };
         stream.write_all(RESPONSE).unwrap();
-        println!("accept second connection");
+        println!("accept new connection");
     }
 }
 // TODO pidfd_getfd syscall
@@ -267,12 +267,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         connect_addr();
     });
     let j_h = std::thread::spawn(move || {
-        let mut stream = TcpStream::connect(BIND_ADDR).unwrap();
-        println!("send second request, waiting for response");
-        let mut s = vec![0; 1024];
-        let n = stream.read(&mut s).unwrap();
-        println!("second request done");
-        assert_eq!(RESPONSE, &s[..n]);
+        for n in 0..5 {
+            let mut stream = TcpStream::connect(BIND_ADDR).unwrap();
+            println!("send {n} request, waiting for response");
+            let mut s = vec![0; 1024];
+            let n = stream.read(&mut s).unwrap();
+            println!("{n} request done");
+            assert_eq!(RESPONSE, &s[..n]);
+        }
     });
     sleep(Duration::from_secs(1));
 
@@ -287,6 +289,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     sleep(Duration::from_secs(2));
     let (lock, cvar) = &*pair2;
     cvar.notify_one();
+    // 等第一个listener drop
+    sleep(Duration::from_secs(1));
     j_h.join().unwrap();
     Ok(())
 }
