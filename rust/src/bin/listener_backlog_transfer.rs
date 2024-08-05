@@ -58,6 +58,7 @@ fn accept_with_retry(listen_fd: BorrowedFd<'_>) -> anyhow::Result<i32> {
         }
     }
 }
+
 fn do_upgrade() {
     let mut fds = Fds::new();
     fds.get_from_sock(UNIX_PATH).unwrap();
@@ -327,10 +328,10 @@ impl Fds {
     where
         P: ?Sized + NixPath + std::fmt::Display,
     {
-        let (vec_key, vec_fds) = self.serialize();
+        let (vec_addr, vec_fds) = self.serialize();
         let mut ser_buf: [u8; 2048] = [0; 2048];
         println!("send fd {:?}", vec_fds);
-        let ser_key_size = serialize_vec_string(&vec_key, &mut ser_buf);
+        let ser_key_size = serialize_vec_string(&vec_addr, &mut ser_buf);
         send_fds_to(vec_fds, &ser_buf[..ser_key_size], path)
     }
     pub fn get_from_sock<P>(&mut self, path: &P) -> anyhow::Result<()>
