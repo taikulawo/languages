@@ -29,6 +29,8 @@ fn main() {
             println!("{}", h)
         }
     }
-    let config = knuffel::parse::<TopBlock>("example.kdl", CONFIG_KDL).unwrap();
-    // let config: TopBlock = kaydle::serde::from_str(CONFIG_KDL).unwrap();
+    let knuffel_config = knuffel::parse::<TopBlock>("example.kdl", CONFIG_KDL).is_err();
+    assert!(knuffel_config);
+    let kaydle_config = kaydle::serde::from_str::<TopBlock>(CONFIG_KDL).is_err();
+    assert!(kaydle_config);
 }
