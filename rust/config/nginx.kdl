@@ -1,0 +1,29 @@
+
+http {
+    include       "mime.types"
+    server {
+        server_name  "localhost"
+        location "/" {
+            root   "html"
+            index  "index.html" "index.htm"
+        }
+        location "/" {
+            root   "html"
+            index  "index.html" "index.htm"
+        }
+        
+    }
+    server {
+        server_name  "localhost"
+        location "/" {
+            root   "html"
+            index  "index.html" "index.htm"
+        }
+        location "/" {
+            root   "html"
+            index  "index.html" "index.htm"
+        }
+        
+    }
+
+}
