@@ -257,7 +257,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("accept first connection");
             let (lock, cvar) = &*pair;
             let g = lock.lock().unwrap();
-            cvar.wait(g).unwrap();
+            let guard = cvar.wait(g).unwrap();
             break;
         }
         println!("drop old listener");

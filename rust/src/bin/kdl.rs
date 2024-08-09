@@ -20,13 +20,19 @@ struct HttpBlock {
 struct TopBlock {
     pub http: HttpBlock,
 }
+
 fn main() {
     let doc: KdlDocument = CONFIG_KDL.parse().expect("failed to parse KDL");
-    println!("{}", doc);
     let http = doc.get("http").unwrap();
-    if let Some(c) = http.children().cloned() {
-        for h in c.into_iter() {
-            println!("{}", h)
+    let http_block = http.children().unwrap();
+    for node in http_block.nodes() {
+        match node.name().value() {
+            "server" => {
+                if let Some(server_block) = node.children() {
+                    println!("{}", server_block)
+                }
+            }
+            _ => {}
         }
     }
     let knuffel_config = knuffel::parse::<TopBlock>("example.kdl", CONFIG_KDL).is_err();

@@ -14,7 +14,7 @@ http {
         
     }
     server {
-        server_name  "localhost"
+        server_name  "localhost1"
         location "/" {
             root   "html"
             index  "index.html" "index.htm"
