@@ -9,6 +9,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.86"
 async-trait = "0.1.80"
+cfg-if = "1.0.0"
 future-utils = "0.12.1"
 futures = "0.3.30"
 kaydle = "0.2.0"
@@ -20,6 +21,7 @@ openssl = "0.10.64"
 reqwest = { version = "0.12.5", features = ["json"] }
 rustls-pemfile = "2.1.2"
 serde = { version = "1.0.204", features = ["derive"] }
+serde_json = { version = "1.0.124", features = ["raw_value"] }
 serde_yaml = "0.9.34"
 socket2 = "0.5.7"
 tokio = { version = "1.38.0", features = ["full"] }
