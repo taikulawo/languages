@@ -1282,6 +1282,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "cfg-if 1.0.0",
  "future-utils",
  "futures 0.3.30",
  "kaydle",
