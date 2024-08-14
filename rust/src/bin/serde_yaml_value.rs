@@ -1,3 +1,5 @@
+use std::net::SocketAddr;
+
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 
@@ -22,4 +24,10 @@ fn main() {
         let x: HostConfig = serde_yaml::from_value(s.inbound_settings).unwrap();
         println!("enable {}", x.enable)
     }
+    let sock = "0.0.0.0:9000";
+    sock.parse::<SocketAddr>().unwrap();
+
+    let sock = "0.0.0.0:9000";
+    let sock = format!("\"{}\"", sock);
+    assert!(sock.parse::<SocketAddr>().is_err())
 }
