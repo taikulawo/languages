@@ -11,5 +11,10 @@ fn main() {
 
 type BoxedError = Box<dyn Error>;
 fn foo<E: Error + 'static>(err: E) {
-    let _: BoxedError = Box::new(err);
+    let err: BoxedError = Box::new(err);
+    // Box<dyn Error> can't implement Error because that makes the existing impl<E: Error> From<E> for Box<dyn Error> conflict with the other impl<T> From<T> for T
+    // compiler error!
+    // bar(err)
 }
+
+fn bar<T: std::error::Error>(err: T) {}
