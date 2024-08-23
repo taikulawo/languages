@@ -24,5 +24,15 @@ serde = { version = "1.0.204", features = ["derive"] }
 serde_json = { version = "1.0.124", features = ["raw_value"] }
 serde_yaml = "0.9.34"
 socket2 = "0.5.7"
-tokio = { version = "1.38.0", features = ["full"] }
+tokio = { workspace = true }
+typing = { version = "0.1.0", path = "typing" }
 url = "2.5.2"
+[workspace]
+members = ["typing", "."]
+resolver = "2"            # See https://doc.rust-lang.org/cargo/reference/resolver.html#feature-resolver-version-2
+
+[workspace.package]
+edition = "2021"
+
+[workspace.dependencies]
+tokio = { version = "1.38.0", features = ["full"] }
