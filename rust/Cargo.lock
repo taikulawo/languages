@@ -469,7 +469,7 @@ dependencies = [
  "http",
  "indexmap",
  "slab",
- "tokio 1.38.0",
+ "tokio 1.36.0",
  "tokio-util",
  "tracing",
 ]
@@ -555,7 +555,7 @@ dependencies = [
  "itoa",
  "pin-project-lite",
  "smallvec 1.13.2",
- "tokio 1.38.0",
+ "tokio 1.36.0",
  "want",
 ]
 
@@ -571,7 +571,7 @@ dependencies = [
  "hyper-util",
  "rustls",
  "rustls-pki-types",
- "tokio 1.38.0",
+ "tokio 1.36.0",
  "tokio-rustls",
  "tower-service",
 ]
@@ -587,7 +587,7 @@ dependencies = [
  "hyper",
  "hyper-util",
  "native-tls",
- "tokio 1.38.0",
+ "tokio 1.36.0",
  "tokio-native-tls",
  "tower-service",
 ]
@@ -606,7 +606,7 @@ dependencies = [
  "hyper",
  "pin-project-lite",
  "socket2",
- "tokio 1.38.0",
+ "tokio 1.36.0",
  "tower",
  "tower-service",
  "tracing",
@@ -1251,7 +1251,7 @@ dependencies = [
  "serde_urlencoded",
  "sync_wrapper",
  "system-configuration",
- "tokio 1.38.0",
+ "tokio 1.36.0",
  "tokio-native-tls",
  "tower-service",
  "url",
@@ -1297,7 +1297,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "socket2",
- "tokio 1.38.0",
+ "tokio 1.36.0",
  "typing",
  "url",
 ]
@@ -1672,9 +1672,9 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "1.38.0"
+version = "1.36.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba4f4a02a7a80d6f274636f0aa95c7e383b912d41fe721a31f29e29698585a4a"
+checksum = "61285f6515fa018fb2d1e46eb21223fff441ee8db5d0f1435e8ab4f5cdb80931"
 dependencies = [
  "backtrace",
  "bytes 1.6.0",
@@ -1744,9 +1744,9 @@ dependencies = [
 
 [[package]]
 name = "tokio-macros"
-version = "2.3.0"
+version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f5ae998a069d4b5aba8ee9dad856af7d520c3699e6159b185c2acd48155d39a"
+checksum = "5b8a1e28f2deaa14e508979454cb3a223b10b938b45af148bc0986de36f1923b"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1760,7 +1760,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbae76ab933c85776efabc971569dd6119c580d8f5d448769dec1764bf796ef2"
 dependencies = [
  "native-tls",
- "tokio 1.38.0",
+ "tokio 1.36.0",
 ]
 
 [[package]]
@@ -1790,7 +1790,7 @@ checksum = "0c7bc40d0e5a97695bb96e27995cd3a08538541b0a846f65bba7a359f36700d4"
 dependencies = [
  "rustls",
  "rustls-pki-types",
- "tokio 1.38.0",
+ "tokio 1.36.0",
 ]
 
 [[package]]
@@ -1889,7 +1889,7 @@ dependencies = [
  "futures-core",
  "futures-sink",
  "pin-project-lite",
- "tokio 1.38.0",
+ "tokio 1.36.0",
 ]
 
 [[package]]
@@ -1902,7 +1902,7 @@ dependencies = [
  "futures-util",
  "pin-project",
  "pin-project-lite",
- "tokio 1.38.0",
+ "tokio 1.36.0",
  "tower-layer",
  "tower-service",
 ]
@@ -1948,7 +1948,7 @@ checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
 name = "typing"
 version = "0.1.0"
 dependencies = [
- "tokio 1.38.0",
+ "tokio 1.36.0",
 ]
 
 [[package]]

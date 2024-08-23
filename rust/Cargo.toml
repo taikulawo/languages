@@ -24,6 +24,8 @@ serde = { version = "1.0.204", features = ["derive"] }
 serde_json = { version = "1.0.124", features = ["raw_value"] }
 serde_yaml = "0.9.34"
 socket2 = "0.5.7"
+# Cargo will never include two compatible versions at once. 
+# 1.36 and 1.38 are compatible versions — this is determined solely by looking at their version numbers, not by dependents’ version ranges.
 tokio = { workspace = true }
 typing = { version = "0.1.0", path = "typing" }
 url = "2.5.2"
@@ -35,4 +37,4 @@ resolver = "2"            # See https://doc.rust-lang.org/cargo/reference/resolv
 edition = "2021"
 
 [workspace.dependencies]
-tokio = { version = "1.38.0", features = ["full"] }
+tokio = { version = "1.36.0", features = ["full"] }
