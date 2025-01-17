@@ -2,7 +2,7 @@
 
 ## TODO
 
-[] 从 xmake 切换到 cmake
+[ ] 从 xmake 切换到 cmake
 
 xmake构建
 
