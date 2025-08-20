@@ -1,0 +1,9 @@
+#!/usr/bin/env -S deno run --allow-all --ext=ts
+// curl -fsSL https://deno.land/install.sh | sh
+import { $ } from "npm:zx";
+$.verbose = true;
+interface FOO {
+    foo: string;
+}
+await $`echo hello`;
+console.log("world");
