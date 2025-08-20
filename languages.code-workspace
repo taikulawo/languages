@@ -1,13 +1,19 @@
 {
 	"folders": [
 		{
-			"path": "cpp"
+			"path": "rust"
 		},
 		{
 			"path": "golang"
 		},
 		{
-			"path": "rust"
+			"path": "python"
+		},
+		{
+			"path": "javascript/"
+		},
+		{
+			"path": "cpp"
 		},
 		{
 			"path": "."

@@ -1,10 +1,10 @@
 from req import *;
 import file
 from bs4 import BeautifulSoup
-
+import sys
 def main():
+    print("Hello from python ", sys.version)
     soup = BeautifulSoup("<p>Some<b>bad<i>HTML")
-    print("Hello from example!")
     r = send()
     print("status_code:{0}, content-type:{1}".format(r.status_code,r.headers['content-type']))
     content = file.read_current_file()
